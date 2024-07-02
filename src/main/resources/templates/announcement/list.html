@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="/css/css.css">
+    <link rel="shortcut icon" href="/img/favicon.png">
+
+    <title>E-Archive</title>
+</head>
+<body>
+
+
+<div class="container">
+    <h1><a href="/">Announcement</a></h1>
+    <h3 id="date"></h3>
+    <div class="row" style="margin-top:10px" id="announcement-list">
+    </div>
+
+    <div class="d-flex justify-content-center" style="display: flex;flex-direction: column">
+        <div style="border-top:solid 2px #f1c40f;width: 100%"></div>
+
+    </div>
+
+
+</div>
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+
+<script>
+    $(document).ready(function () {
+
+        $.ajax({
+            url: "/announcement/getList",
+            type: 'GET',
+            success: function (res) {
+                $('#date').val(`${res[0].date}`);
+                for (let i = 0; i < res.length; i++) {
+                    let html=`
+                        <div class="d-flex align-items-center" id="write-memo" style="border: #f1c40f;display: flex;flex-direction: column">
+                            <div style="border-top:solid 2px #f1c40f;width: 100%"></div>
+
+                            <div class="hover-cursor" style="width:100%;margin-top:10px;font-size: large;color: #f1c40f;font-weight: bolder;text-align: center"><a href="${res[i].slink}" target="_blank">${res[i].title}</a></div>
+                            <div class="hover-cursor" style="color: #f1c40f;"><a href="${res[i].slink}" target="_blank">${res[i].company}</a></div>
+                            <div class="hover-cursor" style="color: #f1c40f;margin-top: 10px"><a href="${res[i].jlink}" target="_blank">잡플래닛 가기</a></div>
+                        </div>
+                    `;
+                    $('#announcement-list').append(html);
+                }
+            },
+        })
+    });
+
+
+
+
+</script>
+</body>
+</html>

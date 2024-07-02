@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="/css/css.css">
+    <link rel="shortcut icon" href="/img/favicon.png">
+    <link href="https://vjs.zencdn.net/7.10.2/video-js.css" rel="stylesheet" />
+    <title>E-Archive</title>
+</head>
+<body>
+
+
+<div class="container">
+    <h1><a href="/dataArchive/select">Video Archive</a></h1>
+    <div class="d-flex flex-column justify-content-between">
+        <div style="margin-top:10px;width: 100%;height: 300px;border: solid 2px #f1c40f" id="play-zone">
+            <video id="video-player" class="video-js" controls preload="auto" data-setup='{}' height="100%">
+            </video>
+        </div>
+        <div style="margin-top:10px;width: 100%" id="file-list">
+            <!--        getList-->
+        </div>
+
+    </div>
+
+
+    <div class="d-flex justify-content-center" style="display: flex;flex-direction: column">
+        <div style="border-top:solid 2px #f1c40f;width: 100%"></div>
+        <div class="d-flex justify-content-center">
+            <button class="custom-btn" style="width: 200px;" type="button" id="add-file-btn">Add Video
+            </button>
+        </div>
+    </div>
+
+
+    <!--    파일 추가 모달-->
+    <div class="modal fade" id="add-file-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content" style="background-color: #2c3e50">
+                <div class="modal-header">
+                    <h2 class="modal-title" id="add-link-modal-title"
+                        style="font-weight: bold; color: #f1c40f;text-align: center">ADD File</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="file-upload-form" name="file-upload-form" method="post" enctype="multipart/form-data">
+                        <div class="filebox">
+                            <input class="upload-name" value="첨부파일" placeholder="첨부파일">
+                            <label for="file">파일찾기</label>
+                            <input type="file" id="file" name="file">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="custom-btn" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="custom-btn" id="upload-btn">Upload</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+
+<!--    로딩 모달-->
+    <div class="modal fade" id="loader-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" style="--bs-modal-padding:0;position: relative">
+        <div class="modal-dialog">
+            <div class="modal-content" style="background-color: #2c3e50">
+
+                <div class="modal-body">
+                    <div class="loader3" style="width: 100%; text-align: center"></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+</div>
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+<script src="https://vjs.zencdn.net/7.8.2/video.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-hls/5.15.0/videojs-contrib-hls.min.js"></script>
+
+<script>
+    let addFileModal = new bootstrap.Modal($('#add-file-modal'));
+    let loaderModal = new bootstrap.Modal($('#loader-modal'));
+
+    $(document).ready(function () {
+        $('.video-player-dimensions').css('height', '100%');
+        $('.video-player-dimensions').css('width', '100%');
+        $.ajax({
+            url:'/dataArchive/file/getList?type=video',
+            type:'GET',
+            success: function (res) {
+                $('#file-list').empty();
+                for (let i = 0; i < res.length; i++) {
+                    let html=`
+                        <div class="d-flex align-items-center" id="file-row" style="border-top: solid 1px #f1c40f;display: flex;flex-direction: column">
+                            <div style="display: flex;flex-direction: column;width:100%; margin-top: 2px; margin-bottom: 2px">
+                                <div style="font-size: large;color: #f1c40f;font-weight: bolder;text-align: center;vertical-align: center;width:100%">${res[i].originalFilename}</div>
+                                <div style="display: flex;flex-direction: row;width:100%; margin-top: 2px; margin-bottom: 2px;align-content: center">
+                                <div class="d-flex justify-content-center" style="width:100%">
+                                    <button class="custom-btn" style="height: 30px; margin: 0" onclick="onclickPlayBtn(${res[i].id})">Play</button>
+                                    <button class="custom-btn" style="height: 30px; margin: 0 20px" onclick="downloadFile(${res[i].id})">Download</button>
+                                    <button class="custom-btn" style="height: 30px; margin: 0" onclick="deleteFile(${res[i].id})">Delete</button>
+                                </div>
+                            </div>
+
+                            </div>
+                        </div>
+                    `
+                    $('#file-list').append(html);
+                }
+            },
+        })
+    });
+
+    function onclickPlayBtn(id) {
+        $.ajax({
+            url:'/dataArchive/file/getInfoById?filesId='+id,
+            type: 'GET',
+            success: function (res) {
+                let player = videojs('video-player');
+                player.src({
+                    src: "https://d2krythk1082yb.cloudfront.net/" + res.filePath,
+                    type: 'video/mp4'
+                });
+                player.load();
+                player.play();
+            },
+        })
+    }
+
+    function downloadFile(filesId) {
+        location.href = '/dataArchive/file/download?filesId=' + filesId;
+    }
+
+    function deleteFile(filesId) {
+        $.ajax({
+            url: '/dataArchive/file/delete?filesId=' + filesId,
+            type: 'POST',
+            success: function (res) {
+                alert(res);
+                location.href='/dataArchive/video'
+            },
+        })
+    }
+
+    $('#add-file-btn').click(function () {
+        addFileModal.show();
+    });
+
+
+    $("#file").on('change', function () {
+        let fileName = $("#file").val();
+        $(".upload-name").val(fileName);
+    });
+
+
+    $('#upload-btn').click(function () {
+        let formData = new FormData($('#file-upload-form')[0]);
+        formData.append("file", $('#file')[0].files[0])
+
+        addFileModal.hide();
+
+        // 안먹힘
+        loaderModal.show();
+
+        fileUpload(formData);
+
+        //안먹힘
+        loaderModal.hide();
+    });
+
+    function fileUpload(formData) {
+
+        $.ajax({
+            url: '/dataArchive/file/upload?type=video',
+            type: 'POST',
+            enctype: 'multipart/form-data',
+            processData: false,
+            contentType: false,
+            data: formData,
+            success: function (res) {
+                alert(res);
+                location.href = '/dataArchive/video';
+            },
+        })
+    }
+</script>
+</body>
+</html>

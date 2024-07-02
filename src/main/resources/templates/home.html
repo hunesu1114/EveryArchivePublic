@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/css.css">
+    <link rel="shortcut icon" href="/img/favicon.png">
+
+    <title>E-Archive</title>
+</head>
+<body>
+    <div class="container">
+        <h1><a href="/">Every Archive</a></h1>
+        <div class="d-flex justify-content-center" style="margin-top:50px">
+            <h5 id="visit-cnt"></h5>
+        </div>
+        <div class="logon-main" id="logon-main" style="display:block">
+            <div class="d-flex justify-content-center" style="margin-top:20px">
+                <button id="link-archive-btn" class="custom-btn" style="width: 200px;"
+                        onclick="location.href='/linkArchive/list'">Link Archive</button>
+            </div>
+            <div class="d-flex justify-content-center">
+                <button id="memo-archive-btn" class="custom-btn" style="width: 200px;"
+                        onclick="location.href='/memoArchive/list'">Memo Archive</button>
+            </div>
+            <div class="d-flex justify-content-center">
+                <button id="data-archive-btn" class="custom-btn" style="width: 200px;"
+                        onclick="location.href='/dataArchive/select'">Data Archive</button>
+            </div>
+            <!--<div class="d-flex justify-content-center">
+                <button id="board-btn" class="custom-btn" style="width: 200px;"
+                        onclick="location.href='/'">Anonymlog</button>
+            </div>-->
+            <div class="d-flex justify-content-center">
+                <button id="chat-btn" class="custom-btn" style="width: 200px;"
+                        onclick="location.href='/announcement/list'">Announcement</button>
+            </div>
+
+            <div class="d-flex justify-content-center">
+                <button id="logout-btn" class="custom-btn" style="width: 200px;">Logout</button>
+            </div>
+        </div>
+
+        <div class="logout-main" id="logout-main" style="display: none">
+            <div class="d-flex justify-content-center" style="margin-top:20px">
+                <button id="login-btn" class="custom-btn" style="width: 200px;"
+                        onclick="location.href='/login'">Login</button>
+            </div>
+        </div>
+
+        <div class="row text-center font-color">
+            <p style="margin-top:30px;color: #f1c40f;">Made By 김현수</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="/js/AuthUtil.js"></script>
+    <script>
+        $(document).ready(function () {
+
+            $.ajax({
+                url: '/actuator/metrics/http.server.requests?tag=uri:/',
+                method: 'GET',
+                success: function (res) {
+                    var visitCnt = res.measurements[0].value;
+                    $('#visit-cnt').text('방문 Count :' + visitCnt);
+                },
+            });
+
+            $.ajax({
+                url:'/checkAuth',
+                type: 'GET',
+                success: function (res) {
+                    if (res === 'true') {
+                        $('#logout-main').css("display", "none");
+                        $('#logon-main').css("display", "block");
+                    } else {
+                        $('#logout-main').css("display", "block");
+                        $('#logon-main').css("display", "none");
+                    }
+                },
+            })
+
+        });
+
+        $('#logout-btn').click(function () {
+            $.ajax({
+                url: '/logout/custom',
+                type:'POST',
+                success: function (res) {
+                    if (res === 'ok') {
+                        alert('로그아웃 되었습니다.');
+                        location.href = "/";
+                    } else {
+                        alert('로그아웃 실패');
+                    }
+                },
+            })
+        });
+
+
+    </script>
+</body>
+</html>

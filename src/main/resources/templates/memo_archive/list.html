@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="/css/css.css">
+    <link rel="shortcut icon" href="/img/favicon.png">
+
+    <title>E-Archive</title>
+</head>
+<body>
+
+
+<div class="container">
+    <h1><a href="/">Memo Archive</a></h1>
+    <div class="row" style="margin-top:10px" id="memo-list">
+    </div>
+
+    <div class="d-flex justify-content-center" style="display: flex;flex-direction: column">
+        <div style="border-top:solid 2px #f1c40f;width: 100%"></div>
+        <div class="d-flex justify-content-center">
+            <button class="custom-btn" style="width: 200px;" type="button" id="add-memo-btn">Add Memo
+            </button>
+        </div>
+    </div>
+
+
+</div>
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+
+<script>
+    let writeStatus=false;
+
+    $(document).ready(function () {
+        loadMemo();
+    });
+
+    function loadMemo() {
+        $.ajax({
+            url: '/memoArchive/getMemo',
+            type: 'GET',
+            success: function (res) {
+                $('#memo-list').empty();
+                for (let i = 0; i < res.length; i++) {
+                    let html = `
+                        <div class="d-flex align-items-center" id="write-memo" style="border: #f1c40f;display: flex;flex-direction: column">
+                            <div style="border-top:solid 2px #f1c40f;width: 100%"></div>
+                                <div class="hover-cursor" style="width:100%;margin-top:10px;font-size: large;color: #f1c40f;font-weight: bolder;text-align: center" onclick="openHideMemo(${res[i].id})">${res[i].title}</div>
+                                <div id="memo-content-block-${res[i].id}" style="width: 100%;display: none">
+                                    <input id="memo-title-${res[i].id}" style="width: 50%;margin-top:10px" value="${res[i].title}">
+                                    <textarea class="memo-content" id="memo-content-${res[i].id}" placeholder="content" style="width: 100%; height: 50vh;margin-top:10px">${res[i].content}</textarea>
+                                    <div style="display: flex;flex-direction: row;justify-content: center">
+                                        <button class="custom-btn" id="cancel-btn" onclick="deleteMemo(${res[i].id})">Delete</button>
+                                        <button class="custom-btn" id="save-btn" onclick="modifyMemo(${res[i].id})">Modify</button>
+                                    </div>
+                                </div>
+                        </div>
+                    `;
+                    $('#memo-list').append(html);
+                }
+            },
+        })
+    }
+
+    $('#add-memo-btn').click(function () {
+        if (!writeStatus) {
+            writeStatus = true;
+            let html=`
+            <div class="d-flex align-items-center" id="write-memo" style="border: #f1c40f;display: flex;flex-direction: column">
+            <div style="border-top:solid 2px #f1c40f;width: 100%"></div>
+            <input id="written-memo-title" type="text" placeholder="Title" style="width: 50%; margin-top:10px">
+            <textarea class="memo-content" id="written-memo-content" placeholder="content" style="width: 100%; height: 30vh;margin-top:10px"></textarea>
+            <div style="display: flex;flex-direction: row">
+            <button class="custom-btn" id="cancel-btn" onclick="emptyWritingMemoArea()">Cancel</button>
+            <button class="custom-btn" id="save-btn" onclick="saveMemo()">Save</button>
+            </div>
+            <div style="border-top:solid 2px #f1c40f;width: 100%"></div>
+            </div>
+
+        `
+            $('#memo-list').prepend(html);
+        }
+    });
+
+    function saveMemo() {
+        let data={
+            'title': $('#written-memo-title').val(),
+            'content': $('#written-memo-content').val(),
+        }
+        $.ajax({
+            url: '/memoArchive/save',
+            type: 'POST',
+            data: JSON.stringify(data),
+            contentType: 'application/json; charset=utf-8',
+            success: function (res) {
+                if (res === 'ok') {
+                    alert('Memo Saved Successfully.');
+                    location.href = "/memoArchive/list";
+                } else {
+                    alert(res);
+                    location.href = "/memoArchive/list";
+                }
+            },
+        })
+        emptyWritingMemoArea();
+    }
+
+    function emptyWritingMemoArea() {
+        $('#write-memo').remove();
+        writeStatus = false;
+    }
+
+    function openHideMemo(id) {
+        let selector='#memo-content-block-'+id;
+        if ($(selector).css('display') === 'block') {
+            $(selector).css('display', 'none');
+        } else {
+            $(selector).css('display', 'block');
+        }
+    }
+    function hideMemo(id) {
+        let selector='#memo-content-block-'+id;
+        $(selector).css('display', 'none');
+    }
+
+    function deleteMemo(id) {
+        $.ajax({
+            url: '/memoArchive/delete?id='+id,
+            type:'POST',
+            success: function (res) {
+                if (res === 'ok') {
+                    alert('Delete Done Successfully.');
+                } else {
+                    alert(res);
+                }
+                location.href = '/memoArchive/list';
+            },
+        })
+    }
+
+    function modifyMemo(id) {
+        let titleSelector='#memo-title-'+id;
+        let contentSelector = '#memo-content-' + id;
+
+        let data = {
+            'id':id,
+            'title': $(titleSelector).val(),
+            'content': $(contentSelector).val(),
+        };
+        $.ajax({
+            url: '/memoArchive/update',
+            type:'POST',
+            data:JSON.stringify(data),
+            contentType: 'application/json; charset=utf-8',
+            success: function (res) {
+                if (res === 'ok') {
+                    alert('Update Done Successfully.');
+                } else {
+                    alert(res);
+                }
+                location.href = '/memoArchive/list';
+            },
+        })
+    }
+
+
+</script>
+</body>
+</html>
